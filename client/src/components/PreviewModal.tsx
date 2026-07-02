@@ -36,6 +36,8 @@ export function PreviewModal({
   onChange,
 }: Props) {
   const [loading, setLoading] = useState(true);
+  const rootRef = useRef<HTMLDivElement>(null);
+  const open = target !== null;
 
   const task = target ? tasks[target.taskIndex] : undefined;
   const model = target ? models[target.modelIndex] : undefined;
@@ -65,7 +67,18 @@ export function PreviewModal({
     if (target) setLoading(true);
   }, [target?.taskIndex, target?.modelIndex]);
 
-  // body scroll lock + keyboard handlers
+  // focus management: move focus into the dialog on open, restore on close
+  useEffect(() => {
+    if (!open) return;
+    const previouslyFocused =
+      document.activeElement instanceof HTMLElement
+        ? document.activeElement
+        : null;
+    rootRef.current?.focus();
+    return () => previouslyFocused?.focus();
+  }, [open]);
+
+  // body scroll lock + keyboard handlers (Esc / arrows / Tab focus trap)
   useEffect(() => {
     if (!target) return;
     const prevOverflow = document.body.style.overflow;
@@ -76,6 +89,33 @@ export function PreviewModal({
         onChange({ taskIndex: target.taskIndex, modelIndex: prevIdx });
       else if (e.key === "ArrowRight" && nextIdx !== null)
         onChange({ taskIndex: target.taskIndex, modelIndex: nextIdx });
+      else if (e.key === "Tab") {
+        // keep Tab cycling inside the dialog while it is open
+        const root = rootRef.current;
+        if (!root) return;
+        const focusables = Array.from(
+          root.querySelectorAll<HTMLElement>(
+            'a[href], button:not(:disabled), iframe, [tabindex]:not([tabindex="-1"])'
+          )
+        ).filter(el => el.offsetParent !== null);
+        if (focusables.length === 0) {
+          e.preventDefault();
+          return;
+        }
+        const first = focusables[0];
+        const last = focusables[focusables.length - 1];
+        const active = document.activeElement;
+        if (!(active instanceof HTMLElement) || !root.contains(active)) {
+          e.preventDefault();
+          first.focus();
+        } else if (!e.shiftKey && active === last) {
+          e.preventDefault();
+          first.focus();
+        } else if (e.shiftKey && (active === first || active === root)) {
+          e.preventDefault();
+          last.focus();
+        }
+      }
     };
     document.addEventListener("keydown", onKey);
     return () => {
@@ -88,9 +128,12 @@ export function PreviewModal({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex flex-col bg-modal-backdrop animate-in fade-in duration-200"
+      ref={rootRef}
+      tabIndex={-1}
+      className="fixed inset-0 z-50 flex flex-col bg-modal-backdrop outline-none animate-in fade-in duration-200"
       role="dialog"
       aria-modal="true"
+      aria-label={`${model.name} — ${task.summary}`}
     >
       {/* Toolbar */}
       <div className="flex h-[56px] shrink-0 items-center gap-3 border-b border-border-strong bg-bg px-3 sm:px-4">
