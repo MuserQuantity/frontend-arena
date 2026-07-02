@@ -34,7 +34,8 @@ export const assetPaths = {
     `/thumbs/${String(taskIndex).padStart(2, "0")}/${modelId}.webp`,
   thumbMobile: (taskIndex: number, modelId: string) =>
     `/thumbs-mobile/${String(taskIndex).padStart(2, "0")}/${modelId}.webp`,
-  icon: (modelId: string) => `/model-icons/${modelId}.svg`,
+  // icons are per-vendor (claude/gemini/glm/gpt/minimax...), shared across versions
+  icon: (vendor: string) => `/model-icons/${vendor}.svg`,
 };
 
 const delay = (ms: number) => new Promise(r => setTimeout(r, ms));

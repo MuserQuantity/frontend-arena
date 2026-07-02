@@ -7,39 +7,39 @@ import type { Model, Task } from "./types";
 
 export const MODELS: Model[] = [
   {
-    id: "claude-opus-4_7",
-    name: "Opus 4.7",
+    id: "fable-5-max",
+    name: "Fable-5 Max",
     is_mono: false,
-    icon_url: "/model-icons/claude-opus-4_7.svg",
+    icon_url: "/model-icons/claude.svg",
     color: "#d97706",
   },
   {
-    id: "gpt-5_5",
-    name: "GPT 5.5",
+    id: "opus-4_8-max",
+    name: "Opus-4.8 Max",
+    is_mono: false,
+    icon_url: "/model-icons/claude.svg",
+    color: "#ea580c",
+  },
+  {
+    id: "gpt-5_5-xhigh",
+    name: "GPT-5.5 XHigh",
     is_mono: true,
-    icon_url: "/model-icons/gpt-5_5.svg",
+    icon_url: "/model-icons/gpt.svg",
     color: "#0f172a",
   },
   {
-    id: "glm-5_2",
-    name: "GLM 5.2",
+    id: "glm-5_2-max",
+    name: "GLM-5.2 Max",
     is_mono: true,
-    icon_url: "/model-icons/glm-5_2.svg",
+    icon_url: "/model-icons/glm.svg",
     color: "#2563eb",
   },
   {
-    id: "gemini-3_5-flash",
-    name: "Gemini 3.5 Flash",
+    id: "gemini-3_5-flash-high",
+    name: "Gemini-3.5-Flash High",
     is_mono: false,
-    icon_url: "/model-icons/gemini-3_5-flash.svg",
+    icon_url: "/model-icons/gemini.svg",
     color: "#7c3aed",
-  },
-  {
-    id: "minimax-m3",
-    name: "Minimax M3",
-    is_mono: false,
-    icon_url: "/model-icons/minimax-m3.svg",
-    color: "#e11d48",
   },
 ];
 
