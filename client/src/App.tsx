@@ -16,11 +16,12 @@ function Router() {
   );
 }
 
-// Theme follows the system preference (set on <html> before paint in index.html).
+// Theme follows the system preference until manually toggled in the header
+// (initial class set on <html> before paint in index.html).
 function App() {
   return (
     <ErrorBoundary>
-      <ThemeProvider defaultTheme="light">
+      <ThemeProvider switchable>
         <TooltipProvider>
           <Toaster />
           <Router />

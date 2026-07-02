@@ -17,10 +17,16 @@
     />
     <title>Frontend Arena — 大模型前端实力对比</title>
     <script>
-      // Sync initial theme with system preference before paint to avoid flash.
+      // Set the initial theme before paint to avoid a flash: an explicit
+      // choice persisted from the header toggle wins, otherwise follow the
+      // system preference. Kept in sync with ThemeContext.tsx.
       (function () {
         try {
-          var dark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+          var stored = localStorage.getItem("theme");
+          var dark =
+            stored === "dark" ||
+            (stored !== "light" &&
+              window.matchMedia("(prefers-color-scheme: dark)").matches);
           if (dark) document.documentElement.classList.add("dark");
         } catch (e) {}
       })();

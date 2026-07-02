@@ -12,53 +12,55 @@ const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
 
 interface ThemeProviderProps {
   children: React.ReactNode;
-  defaultTheme?: Theme;
   switchable?: boolean;
 }
 
 const getSystemTheme = (): Theme =>
   window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
 
+const readStored = (): Theme | null => {
+  try {
+    const s = localStorage.getItem("theme");
+    return s === "light" || s === "dark" ? s : null;
+  } catch {
+    return null;
+  }
+};
+
 export function ThemeProvider({
   children,
-  defaultTheme = "light",
   switchable = false,
 }: ThemeProviderProps) {
-  const [theme, setTheme] = useState<Theme>(() => {
-    if (switchable) {
-      const stored = localStorage.getItem("theme");
-      return (stored as Theme) || defaultTheme;
-    }
-    // Non-switchable: follow the system preference (matches the pre-paint
-    // script in index.html so the class set before hydration is kept).
-    return getSystemTheme();
-  });
+  // Follow the system preference until the user explicitly toggles; an
+  // explicit choice is persisted and wins over the system on later visits.
+  // (Matches the pre-paint script in index.html.)
+  const [explicit, setExplicit] = useState<Theme | null>(() =>
+    switchable ? readStored() : null
+  );
+  const [systemTheme, setSystemTheme] = useState<Theme>(getSystemTheme);
+  const theme = explicit ?? systemTheme;
 
   useEffect(() => {
-    const root = document.documentElement;
-    if (theme === "dark") {
-      root.classList.add("dark");
-    } else {
-      root.classList.remove("dark");
-    }
+    document.documentElement.classList.toggle("dark", theme === "dark");
+  }, [theme]);
 
-    if (switchable) {
-      localStorage.setItem("theme", theme);
-    }
-  }, [theme, switchable]);
-
-  // Live-update when the OS theme changes (non-switchable mode only).
+  // Live-update when the OS theme changes (while no explicit choice is set).
   useEffect(() => {
-    if (switchable) return;
     const mql = window.matchMedia("(prefers-color-scheme: dark)");
-    const onChange = () => setTheme(getSystemTheme());
+    const onChange = () => setSystemTheme(getSystemTheme());
     mql.addEventListener("change", onChange);
     return () => mql.removeEventListener("change", onChange);
-  }, [switchable]);
+  }, []);
 
   const toggleTheme = switchable
     ? () => {
-        setTheme(prev => (prev === "light" ? "dark" : "light"));
+        const next: Theme = theme === "light" ? "dark" : "light";
+        setExplicit(next);
+        try {
+          localStorage.setItem("theme", next);
+        } catch {
+          /* storage unavailable (e.g. private mode) — theme still applies */
+        }
       }
     : undefined;
 
