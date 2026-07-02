@@ -158,8 +158,9 @@ export function PreviewModal({
         </div>
       </div>
 
-      {/* Stage */}
-      <div className="relative flex-1 bg-white">
+      {/* Stage — theme-aware backdrop so dark mode doesn't flash white; the
+          iframe itself keeps a white canvas since generated pages assume it. */}
+      <div className="relative flex-1 bg-bg">
         {loading && (
           <div className="absolute inset-0 z-10 flex items-center justify-center bg-bg">
             <PlaceholderThumb
