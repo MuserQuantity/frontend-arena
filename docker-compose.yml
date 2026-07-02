@@ -1,0 +1,20 @@
+services:
+  arena:
+    build:
+      context: .
+      args:
+        # baked into the frontend at build time; "/" = same-origin API
+        VITE_API_BASE_URL: /
+    image: frontend-arena
+    container_name: frontend-arena
+    ports:
+      - "3000:3000" # 改宿主机端口只动冒号左边，如 "8080:3000"
+    environment:
+      # 写接口的 Bearer 密钥，从项目根目录 .env 读取（compose 自动加载）
+      API_KEY: ${API_KEY:?请在 .env 中设置 API_KEY}
+      # 同源部署资源用相对路径，无需 PUBLIC_BASE_URL；如挂 CDN/反代再设置
+      # PUBLIC_BASE_URL: https://arena.example.com
+    volumes:
+      # 数据（db.json + 上传的生成结果）持久化到宿主机，便于直接查看/备份
+      - ./server/data:/app/server/data
+    restart: unless-stopped

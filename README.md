@@ -49,6 +49,20 @@ pnpm start                  # http://localhost:3000
 
 其他命令：`pnpm check`（类型检查）· `pnpm format`（格式化）· `pnpm preview`（预览构建产物）
 
+## Docker 部署
+
+```bash
+# .env 里已有 API_KEY 即可（compose 自动读取）
+docker compose up -d --build     # → http://localhost:3000
+docker compose logs -f arena     # 看日志
+docker compose down              # 停止（数据保留在 ./server/data）
+```
+
+- 单容器同源：前端 + API + 静态资源一个端口，`VITE_API_BASE_URL=/` 已在构建时烘焙
+- 数据通过 bind mount 持久化到宿主机 `./server/data`（db.json + 上传文件），可直接查看和备份
+- 改宿主机端口：编辑 `docker-compose.yml` 的 `ports`（如 `"8080:3000"`）
+- 注意：容器和本机 `pnpm dev:server` 共用 `./server/data`，不要同时运行两者写数据
+
 ## 数据管理
 
 后端数据（模型 / 任务 / 生成结果）通过 REST API 增删改查：
