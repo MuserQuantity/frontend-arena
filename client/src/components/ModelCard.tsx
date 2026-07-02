@@ -10,7 +10,7 @@ import { ArrowUpRight } from "lucide-react";
 import type { Generation, Model } from "@/lib/types";
 import { ModelIcon } from "./ModelIcon";
 import { PlaceholderThumb } from "./PlaceholderThumb";
-import { cn } from "@/lib/utils";
+import { cn, splitModelName } from "@/lib/utils";
 
 interface Props {
   model: Model;
@@ -25,6 +25,7 @@ export function ModelCard({ model, taskIndex, generation, onOpen }: Props) {
   const [imgLoaded, setImgLoaded] = useState(false);
   const [imgFailed, setImgFailed] = useState(false);
   const hasThumb = Boolean(ready && generation?.thumb_url) && !imgFailed;
+  const { base, tier } = splitModelName(model.name);
 
   return (
     <button
@@ -70,11 +71,17 @@ export function ModelCard({ model, taskIndex, generation, onOpen }: Props) {
 
       {/* Footer */}
       <div className="flex items-center gap-2 px-3 py-2.5">
-        <span className="flex min-w-0 flex-1 items-center gap-2 text-text">
+        <span
+          title={model.name}
+          className="flex min-w-0 flex-1 items-center gap-2 text-text"
+        >
           <ModelIcon model={model} size={15} />
-          <span className="truncate text-[12.5px] font-medium">
-            {model.name}
-          </span>
+          <span className="truncate text-[12.5px] font-medium">{base}</span>
+          {tier && (
+            <span className="shrink-0 border border-border px-1 py-px font-mono text-[9.5px] uppercase leading-none tracking-[0.08em] text-text-dim">
+              {tier}
+            </span>
+          )}
         </span>
         <span
           className={cn(

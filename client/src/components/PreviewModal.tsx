@@ -10,6 +10,7 @@ import type { Generation, Model, Task } from "@/lib/types";
 import { ModelIcon } from "./ModelIcon";
 import { PlaceholderThumb } from "./PlaceholderThumb";
 import { RingSpinner } from "./RingSpinner";
+import { splitModelName } from "@/lib/utils";
 
 export interface PreviewTarget {
   taskIndex: number;
@@ -112,7 +113,10 @@ export function PreviewModal({
           <NavBtn
             side="prev"
             disabled={prevIdx === null}
-            label={prevIdx !== null ? models[prevIdx].name : "—"}
+            title={prevIdx !== null ? models[prevIdx].name : undefined}
+            label={
+              prevIdx !== null ? splitModelName(models[prevIdx].name).base : "—"
+            }
             onClick={() =>
               prevIdx !== null &&
               onChange({ taskIndex: target.taskIndex, modelIndex: prevIdx })
@@ -121,7 +125,10 @@ export function PreviewModal({
           <NavBtn
             side="next"
             disabled={nextIdx === null}
-            label={nextIdx !== null ? models[nextIdx].name : "—"}
+            title={nextIdx !== null ? models[nextIdx].name : undefined}
+            label={
+              nextIdx !== null ? splitModelName(models[nextIdx].name).base : "—"
+            }
             onClick={() =>
               nextIdx !== null &&
               onChange({ taskIndex: target.taskIndex, modelIndex: nextIdx })
@@ -181,11 +188,13 @@ export function PreviewModal({
 function NavBtn({
   side,
   label,
+  title,
   disabled,
   onClick,
 }: {
   side: "prev" | "next";
   label: string;
+  title?: string;
   disabled: boolean;
   onClick: () => void;
 }) {
@@ -194,6 +203,7 @@ function NavBtn({
     <button
       type="button"
       disabled={disabled}
+      title={title}
       onClick={onClick}
       className="flex h-8 items-center gap-1 border border-border px-2 text-text-muted transition-colors hover:border-border-strong hover:text-text disabled:cursor-default disabled:opacity-40 disabled:hover:border-border [&:not(:first-child)]:border-l-0"
     >
