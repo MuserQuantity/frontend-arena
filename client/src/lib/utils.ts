@@ -5,6 +5,11 @@ export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
 
+/** Anchor id for a task row, shared by the index links and the rows. */
+export function taskAnchorId(taskIndex: number): string {
+  return `task-${String(taskIndex + 1).padStart(2, "0")}`;
+}
+
 /** Trailing tier/effort qualifiers that can be split off a model display name. */
 const TIER_RE = /^(max|xhigh|high|medium|low|mini|ultra|thinking)$/i;
 

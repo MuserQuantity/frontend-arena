@@ -97,6 +97,9 @@
   * {
     @apply border-border;
   }
+  html {
+    scroll-behavior: smooth;
+  }
   html,
   body {
     @apply bg-bg text-text;
@@ -175,6 +178,9 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
   * {
     animation-duration: 0.01ms !important;
     transition-duration: 0.01ms !important;

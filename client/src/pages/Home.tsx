@@ -9,7 +9,9 @@ import type { Generation, Model, Task } from "@/lib/types";
 import { Header } from "@/components/Header";
 import { Hero } from "@/components/Hero";
 import { Footer } from "@/components/Footer";
+import { TaskIndex } from "@/components/TaskIndex";
 import { TaskRow } from "@/components/TaskRow";
+import { BackToTop } from "@/components/BackToTop";
 import { PreviewModal, type PreviewTarget } from "@/components/PreviewModal";
 import { RingSpinner } from "@/components/RingSpinner";
 
@@ -87,6 +89,7 @@ export default function Home() {
         ) : (
           <>
             <Hero models={models} taskCount={tasks.length} />
+            <TaskIndex tasks={tasks} />
             <section className="pt-8">
               {tasks.map(task => (
                 <TaskRow
@@ -103,6 +106,7 @@ export default function Home() {
       </main>
 
       <Footer />
+      <BackToTop />
 
       <PreviewModal
         target={target}

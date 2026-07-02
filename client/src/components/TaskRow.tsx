@@ -7,6 +7,7 @@
 import { useMemo, useState } from "react";
 import type { Generation, Model, Task } from "@/lib/types";
 import { ModelCard } from "./ModelCard";
+import { taskAnchorId } from "@/lib/utils";
 
 interface Props {
   task: Task;
@@ -26,7 +27,10 @@ export function TaskRow({ task, models, generations, onOpenPreview }: Props) {
   }, [generations]);
 
   return (
-    <article className="border-b border-border py-6 first:pt-0">
+    <article
+      id={taskAnchorId(task.index)}
+      className="scroll-mt-[calc(var(--topbar-h)+12px)] border-b border-border py-6 first:pt-0"
+    >
       {/* Head */}
       <button
         type="button"
