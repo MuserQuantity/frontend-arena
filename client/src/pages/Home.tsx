@@ -68,6 +68,15 @@ export default function Home() {
     return outer;
   }, [genByTask]);
 
+  // hero 预览计数：只统计真实 ready 的体验卡，排除待生成/失败
+  const previewCount = useMemo(() => {
+    let n = 0;
+    genByTask.forEach(list => {
+      for (const g of list) if (g.status === "ready") n++;
+    });
+    return n;
+  }, [genByTask]);
+
   const openPreview = useCallback((taskIndex: number, modelIndex: number) => {
     setTarget({ taskIndex, modelIndex });
   }, []);
@@ -88,7 +97,11 @@ export default function Home() {
           </div>
         ) : (
           <>
-            <Hero models={models} taskCount={tasks.length} />
+            <Hero
+              models={models}
+              taskCount={tasks.length}
+              previewCount={previewCount}
+            />
             <TaskIndex tasks={tasks} />
             <section className="pt-8">
               {tasks.map(task => (

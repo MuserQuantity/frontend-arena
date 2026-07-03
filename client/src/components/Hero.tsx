@@ -8,9 +8,11 @@ import { ModelIcon } from "./ModelIcon";
 interface Props {
   models: Model[];
   taskCount: number;
+  /** 真实 ready 的体验卡数量（排除待生成/失败） */
+  previewCount: number;
 }
 
-export function Hero({ models, taskCount }: Props) {
+export function Hero({ models, taskCount, previewCount }: Props) {
   // Roster shows one icon per vendor (models sharing an icon, e.g. two Claude
   // variants, collapse into one); tooltip lists every model of that vendor.
   const vendors = models
@@ -55,7 +57,7 @@ export function Hero({ models, taskCount }: Props) {
         <div className="flex items-center gap-6">
           <Stat label="提示词" value={String(taskCount).padStart(2, "0")} />
           <Stat label="模型" value={String(models.length).padStart(2, "0")} />
-          <Stat label="预览" value={String(taskCount * models.length)} />
+          <Stat label="预览" value={String(previewCount)} />
         </div>
       </div>
     </section>
