@@ -13,6 +13,7 @@ permissions:
     - Read(.env)
     - Exec(curl)
     - Exec(lsof)
+    - Exec(docker ps)
 ---
 
 你是 Frontend Arena 的数据管理助手。用户的需求：**$ARGUMENTS**
@@ -23,14 +24,23 @@ permissions:
 
 ```bash
 KEY=$(grep '^API_KEY=' .env | cut -d= -f2)   # 不要把 key 打印到对话里
-B=http://localhost:3001/api/v1
 ```
 
-- 用 `lsof -i :3001 -sTCP:LISTEN` 确认 API 在线。**不在线时先询问用户**：
-  由用户在自己终端跑 `pnpm dev:server`，或经用户同意后你临时后台启动、操作完立即停掉。
-- 先 `GET $B/models` 和 `GET $B/tasks` 拿现状，把用户口语（如 "fable"、"任务3"）解析成
-  准确的 `id`（模型如 `fable-5-max`；任务序号 N 对应 `index == N-1` 的 task id）。
-  有歧义时列出候选让用户选。
+**先确定用户在用哪个部署，把 API 指向它**（两者共用 `./server/data/db.json`，
+但各自内存独立——写错目标用户会"刷新了也看不到"）：
+
+1. `docker ps --filter name=frontend-arena` 查容器；`lsof -i :3001 -sTCP:LISTEN` 查本机 dev 服务。
+2. **Docker 容器在跑** → `B=http://localhost:3000/api/v1`（用户浏览的就是它）。
+   若此时本机 :3001 也在跑，提醒用户停掉以免双写互相覆盖。
+3. **只有本机 dev 服务** → `B=http://localhost:3001/api/v1`。
+4. **都没跑** → 询问用户：自己终端起 `pnpm dev:server` / `docker compose up -d`，
+   或经同意后你临时启动、操作完停掉。
+5. 万一改动写进了另一个实例（数据在共享的 db.json 里但页面看不到）：
+   `docker restart frontend-arena` 让容器重读文件即可，无数据丢失。
+
+然后 `GET $B/models` 和 `GET $B/tasks` 拿现状，把用户口语（如 "fable"、"任务3"）解析成
+准确的 `id`（模型如 `fable-5-max`；任务序号 N 对应 `index == N-1` 的 task id）。
+有歧义时列出候选让用户选。
 
 ## 2. 数据约定速查
 
@@ -48,7 +58,8 @@ B=http://localhost:3001/api/v1
 - 已有外部托管 url：`PUT` 同路径，body 直接写 `preview_url` / `thumb_url` / `status`。
 - `status`：`ready` 可点击查看 ｜ `pending` / `failed` 卡片置灰。
 - 缩略图为 16:10（建议 640×400）；**不传缩略图也可以**，前端会按模型色系自动渲染线框占位图。
-- 用户只给了 html 时，可提议用无头 Chrome 给页面截一张 16:10 缩略图再一起上传（需用户同意）。
+- 用户只给了 html 时，可提议用无头 Chrome 给页面截一张 16:10 缩略图再一起上传
+  （需用户同意，做法见 §4）。
 
 ## 3. 操作模板
 
@@ -73,7 +84,29 @@ curl -X POST $B/tasks/{taskId}/generations/{modelId}/upload -H "Authorization: B
 curl -X DELETE $B/tasks/{taskId} -H "Authorization: Bearer $KEY"
 ```
 
-## 4. 规则
+## 4. 顺便截缩略图（无头 Chrome）
+
+经用户同意后，给要上传的 html 截 16:10 缩略图一起传。截图同时是页面质检：
+**每张截完都用 read 工具肉眼看一遍**，布局炸了（如 nowrap 撑爆 grid）先修页面再上传。
+
+```bash
+CHROME="/Applications/Google Chrome.app/Contents/MacOS/Google Chrome"
+"$CHROME" --headless=new --disable-gpu --hide-scrollbars --window-size=1280,800 \
+  --virtual-time-budget=6000 --screenshot=shot.png "file:///绝对路径/page.html"
+sips -z 400 640 shot.png       # 1280×800 缩到 640×400（sips -z 高 宽）
+```
+
+- WebGL 页面（three.js 等）**去掉 `--disable-gpu`**，其余不变。
+- 本机 sips 写不出 webp，缩略图直接传 PNG 即可（API 允许 webp/png/jpg/svg）。
+- `--virtual-time-budget`（毫秒）会快进 setTimeout / CSS 动画，适合等页面"演到"想要的画面；
+  但**靠 rAF 时间戳累计 dt 的逻辑（相位轮播、计时器）在虚拟时钟下可能几乎不推进**——
+  这是截图环境的限制，真实浏览正常，别据此改页面。
+- 截不到理想瞬间时：先试调大/调小 budget；再不行就用 sed 生成一个"直接定格到目标状态"
+  的临时副本（如把缓动插值改成直接赋值、把初始相位改成目标相位）出图，用完即删。
+- 页面若引用 CDN（如 three.js importmap），截图需要联网；加 `--enable-logging=stderr`
+  可顺带 grep 页面 JS 报错。
+
+## 5. 规则
 
 - **一切通过 API 操作，绝不直接改 `server/data/db.json`**（服务端内存会覆盖文件改动）。
 - 删除是级联的（删模型/任务会连带删其体验卡和上传文件）——**执行任何删除前必须向用户复述影响并确认**。
