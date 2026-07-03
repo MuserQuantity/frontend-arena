@@ -44,7 +44,7 @@ export function TaskRow({ task, models, generations, onOpenPreview }: Props) {
         <span className="flex-1 text-[16px] font-medium leading-snug tracking-[-0.01em] text-text">
           {task.summary}
         </span>
-        <span className="shrink-0 font-mono text-[11px] uppercase tracking-[0.1em] text-text-dim transition-colors group-hover:text-accent">
+        <span className="shrink-0 font-mono text-[11px] uppercase tracking-[0.1em] text-text-dim transition-colors group-hover:text-text">
           {open ? "− 完整提示词" : "+ 完整提示词"}
         </span>
       </button>
@@ -55,7 +55,7 @@ export function TaskRow({ task, models, generations, onOpenPreview }: Props) {
         style={{ gridTemplateRows: open ? "1fr" : "0fr" }}
       >
         <div className="overflow-hidden">
-          <pre className="mt-4 whitespace-pre-wrap border-l-2 border-accent bg-surface px-4 py-3 font-mono text-[12.5px] leading-relaxed text-text-muted">
+          <pre className="mt-4 whitespace-pre-wrap border-l-2 border-text bg-surface px-4 py-3 font-mono text-[12.5px] leading-relaxed text-text-muted">
             {task.prompt}
           </pre>
         </div>

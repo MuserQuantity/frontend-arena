@@ -21,7 +21,7 @@ export function TaskIndex({ tasks }: Props) {
               href={`#${taskAnchorId(task.index)}`}
               className="group flex items-baseline gap-2.5 py-0.5 no-underline"
             >
-              <span className="tnum shrink-0 font-mono text-[11px] leading-none text-text-dim transition-colors group-hover:text-accent">
+              <span className="tnum shrink-0 font-mono text-[11px] leading-none text-text-dim transition-colors group-hover:text-text">
                 {String(task.index + 1).padStart(2, "0")}
               </span>
               <span className="truncate text-[12.5px] leading-snug text-text-muted transition-colors group-hover:text-text">

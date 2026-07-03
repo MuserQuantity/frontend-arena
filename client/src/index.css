@@ -112,8 +112,8 @@
     text-rendering: optimizeLegibility;
   }
   ::selection {
-    background: var(--accent);
-    color: #09090b;
+    background: var(--text);
+    color: var(--bg);
   }
   button:not(:disabled),
   [role="button"]:not([aria-disabled="true"]),
@@ -159,7 +159,7 @@
 .ring-spinner {
   width: 34px;
   height: 34px;
-  color: var(--accent);
+  color: var(--text);
 }
 .ring-spinner circle {
   fill: none;
