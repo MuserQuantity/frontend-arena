@@ -18,7 +18,7 @@ export const MODELS: Model[] = [
     name: "Opus-4.8 Max",
     is_mono: false,
     icon_url: "/model-icons/claude.svg",
-    color: "#ea580c",
+    color: "#d97706",
   },
   {
     id: "gpt-5_5-xhigh",

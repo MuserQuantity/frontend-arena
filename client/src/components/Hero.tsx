@@ -11,9 +11,22 @@ interface Props {
 }
 
 export function Hero({ models, taskCount }: Props) {
+  // Roster shows one icon per vendor (models sharing an icon, e.g. two Claude
+  // variants, collapse into one); tooltip lists every model of that vendor.
+  const vendors = models
+    .filter(
+      (m, i) => models.findIndex(x => x.icon_url === m.icon_url) === i
+    )
+    .map(m => ({
+      model: m,
+      names: models
+        .filter(x => x.icon_url === m.icon_url)
+        .map(x => x.name)
+        .join(" · "),
+    }));
+
   return (
     <section className="border-b border-border pb-10 pt-12 sm:pt-16">
-      <div className="eyebrow mb-5">MuserQuantity · Frontend Arena</div>
       <h1 className="max-w-[22ch] text-[clamp(30px,5.2vw,52px)] font-semibold leading-[1.1] tracking-[-0.02em] text-text">
         用真实 LLM&nbsp;Arena 提示词，实测各大模型的前端实力
       </h1>
@@ -27,13 +40,13 @@ export function Hero({ models, taskCount }: Props) {
         <div className="flex items-center gap-3">
           <span className="eyebrow">模型阵容</span>
           <div className="flex items-center gap-1.5">
-            {models.map(m => (
+            {vendors.map(v => (
               <span
-                key={m.id}
-                title={m.name}
+                key={v.model.id}
+                title={v.names}
                 className="flex h-7 w-7 items-center justify-center border border-border bg-surface text-text"
               >
-                <ModelIcon model={m} size={15} />
+                <ModelIcon model={v.model} size={15} />
               </span>
             ))}
           </div>
