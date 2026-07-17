@@ -2,6 +2,24 @@
 
 This file documents useful project information discovered during the data management and card upload tasks.
 
+## ⚠️ Upload Collision Gotcha (index-based storage)
+
+The server stores generation files by the task's **current index**: `sites/{NN}/{model_id}.html`
+(`NN` = zero-padded index). But deleting tasks **resequences indexes without moving files**, so a
+task's stored directory can go stale (e.g. a task at index 4 whose files still live in `sites/08/`).
+Any later upload for a *different* task that now occupies index 8 will **silently overwrite** the
+stale files (this destroyed 4 cards on 2026-07-06; they had to be regenerated/restored).
+
+Rules before ANY `/upload`:
+1. `GET /tasks` and `GET /tasks/{id}/generations` — verify for every task that
+   `preview_url` dir == current `index`. If any mismatch exists, migrate first.
+2. Migration = re-upload each generation's current files via the API (download from `preview_url`,
+   POST to the same task) **in ascending target-index order**; the server re-homes files to the
+   current index dir and updates URLs.
+3. As of 2026-07-17 both local and prod are fully aligned (dir == index for all 10 tasks).
+   Keep it that way: avoid deleting tasks; if a deletion is necessary, re-run the alignment
+   check afterwards before any new upload.
+
 ## Deployment Environments & API Configuration
 
 - **Local Docker Environment**:
@@ -11,6 +29,12 @@ This file documents useful project information discovered during the data manage
 
 - **Online Production Environment**:
   - URL: `https://frontend-arena.muserquantity.cn/api/v1`
+
+## Runtime Data Policy
+
+Models, tasks, prompts, uploaded HTML, and thumbnails are runtime data under `server/data/`.
+They must not be added to Git or mirrored into source-code seeds / `client/public/sites/`.
+Back up and restore the complete data directory when moving environments.
 
 ## Task Deletion Script
 

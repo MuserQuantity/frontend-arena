@@ -1,14 +1,10 @@
 /**
- * JSON-file backed store for the arena data (models / tasks / generations).
- * Scale is tiny (dozens of rows), so a single db.json with atomic writes is
- * plenty. On first boot the store is seeded from the client mock dataset so
- * the API serves the exact content the standalone frontend ships with.
- * Generation asset urls are stored RELATIVE ("/sites/00/x.html"); the API
+ * JSON-file backed store for runtime-managed models, tasks, and generations.
+ * Generation asset urls are stored relative to the data directory; the API
  * layer prefixes PUBLIC_BASE_URL when serializing responses.
  */
 import fs from "node:fs";
 import path from "node:path";
-import { MODELS, TASKS } from "../client/src/lib/mockData";
 
 export interface ModelRow {
   id: string;
@@ -46,27 +42,7 @@ export interface DB {
 }
 
 function seed(): DB {
-  const now = new Date().toISOString();
-  const models: ModelRow[] = MODELS.map(m => ({ ...m, created_at: now }));
-  const tasks: TaskRow[] = TASKS.map(t => ({
-    id: t.id,
-    index: t.index,
-    summary: t.summary,
-    prompt: t.prompt,
-    created_at: now,
-  }));
-  const generations: GenerationRow[] = TASKS.flatMap(t =>
-    t.available_models.map(mid => ({
-      task_id: t.id,
-      model_id: mid,
-      preview_url: `/sites/${String(t.index).padStart(2, "0")}/${mid}.html`,
-      thumb_url: "", // empty → the UI renders the model-tinted placeholder
-      thumb_mobile_url: "",
-      status: "ready" as const,
-      updated_at: now,
-    }))
-  );
-  return { models, tasks, generations };
+  return { models: [], tasks: [], generations: [] };
 }
 
 export class Store {
@@ -80,7 +56,7 @@ export class Store {
     } else {
       this.db = seed();
       this.save();
-      console.log(`[store] seeded ${this.file} from mock dataset`);
+      console.log(`[store] initialized empty runtime database at ${this.file}`);
     }
   }
 

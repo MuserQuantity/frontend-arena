@@ -1,6 +1,7 @@
 node_modules
 dist
 server/data
+client/public/sites
 .git
 .env
 .env.*

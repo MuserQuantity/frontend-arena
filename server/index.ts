@@ -1,7 +1,7 @@
 /**
  * Frontend Arena server.
  *  - /api/v1/*  REST API per API.md (GET public; mutations need Bearer API_KEY)
- *  - static: uploaded assets (data dir) → placeholder assets (client/public)
+ *  - static: uploaded assets (data dir) → client assets (client/public)
  *            → built frontend (dist/public, production)
  * Dev:  PORT=3001 tsx watch server/index.ts   (vite serves the client on 3000)
  * Prod: node dist/index.js                     (single origin for app + API)
@@ -62,9 +62,9 @@ async function startServer() {
 
   app.use("/api/v1", createApiRouter({ store, dataDir, apiKey, publicBase }));
 
-  // 1) uploaded generation assets (shadow the placeholders)
+  // 1) runtime generation assets
   app.use(express.static(dataDir, { index: false }));
-  // 2) placeholder sites + model icons shipped with the repo
+  // 2) client assets such as model icons
   app.use(express.static(path.join(ROOT, "client", "public")));
   // 3) built frontend (production)
   const frontendDir =

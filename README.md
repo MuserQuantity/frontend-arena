@@ -17,7 +17,7 @@
 - **全屏交互预览**：iframe 沙箱加载生成页面，`←`/`→` 切换模型、`Esc` 关闭
 - **动态占位缩略图**：缩略图缺失/加载中时，按模型色系自动渲染线框风格占位图，亮/暗主题自适应
 - **完整后端**：REST API（读公开 / 写需 API Key）+ multipart 上传 + 静态托管，JSON 文件存储，开箱即用
-- **双数据模式**：接真实 API，或零配置回落内置 mock 数据独立运行
+- **运行时数据管理**：模型、任务、prompt 和生成结果均由 API 管理，不写入 Git
 - **明暗主题**：跟随系统自动切换
 
 ## 技术栈
@@ -45,7 +45,7 @@ VITE_API_BASE_URL=/ pnpm build
 pnpm start                  # http://localhost:3000
 ```
 
-**只跑前端**（无后端，用内置 mock 数据）：把 `.env` 中 `VITE_API_BASE_URL` 置空后 `pnpm dev`。
+前端始终从 API 读取运行时数据；开发时需同时启动 `dev:server`。
 
 其他命令：`pnpm check`（类型检查）· `pnpm format`（格式化）· `pnpm preview`（预览构建产物）
 
@@ -85,14 +85,14 @@ curl -X POST http://localhost:3001/api/v1/tasks/<taskId>/generations/<modelId>/u
 完整接口契约与增删改查实操手册见 **[API.md](./API.md)**。
 
 数据落在 `server/data/`（gitignore）：`db.json` + 上传的 `sites|thumbs` 文件。
-删除 `db.json` 并重启即可重置回种子数据（15 任务 × 5 模型）。
+新环境从空数据库开始；删除 `db.json` 并重启会清空模型、任务和生成记录。
 
 ## 环境变量（.env）
 
 | 变量 | 说明 |
 | --- | --- |
 | `API_KEY` | 写接口的 Bearer 密钥，仅服务端持有，不会构建进前端 |
-| `VITE_API_BASE_URL` | 前端 API 地址：开发 `http://localhost:3001`，生产同源 `/`，留空则用内置 mock |
+| `VITE_API_BASE_URL` | 前端 API 地址：开发 `http://localhost:3001`，生产同源 `/`；留空也使用同源 API |
 | `PUBLIC_BASE_URL` | API 返回资源 url 的前缀：开发跨端口 `http://localhost:3001`，生产同源留空 |
 | `PORT` / `DATA_DIR` | 服务端口（默认 3000）/ 数据目录（默认 `server/data`） |
 
@@ -100,14 +100,14 @@ curl -X POST http://localhost:3001/api/v1/tasks/<taskId>/generations/<modelId>/u
 
 ```
 client/               前端（Vite root）
-  public/             logo、模型图标、占位预览页
+  public/             logo、模型厂商图标
   src/components/     Header / Hero / TaskRow / ModelCard / PreviewModal / PlaceholderThumb ...
-  src/lib/            api.ts（服务层，mock/真实双模式）· types.ts · mockData.ts
+  src/lib/            api.ts（运行时 API 服务层）· types.ts
 server/               后端
   index.ts            启动入口：静态托管 + SPA fallback
   api.ts              REST 路由（鉴权、校验、上传）
-  store.ts            JSON 文件存储（首次自动播种）
-  data/               运行时数据（gitignore）
+  store.ts            JSON 文件存储（首次创建空数据库）
+  data/               运行时模型、任务、prompt 和生成结果（gitignore）
 shared/               前后端共享常量
 API.md                接口契约 + 数据管理手册
 ```

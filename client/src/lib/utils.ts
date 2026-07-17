@@ -15,7 +15,7 @@ const TIER_RE = /^(max|xhigh|high|medium|low|mini|ultra|thinking)$/i;
 
 /**
  * Split a model display name into base name + tier qualifier, e.g.
- * "Gemini-3.5-Flash High" → { base: "Gemini-3.5-Flash", tier: "High" }.
+ * "Example Model High" → { base: "Example Model", tier: "High" }.
  * Names without a recognized trailing qualifier keep tier undefined.
  */
 export function splitModelName(name: string): { base: string; tier?: string } {

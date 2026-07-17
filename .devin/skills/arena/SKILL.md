@@ -46,8 +46,8 @@ KEY=$(grep '^API_KEY=' .env | cut -d= -f2)   # 不要把 key 打印到对话里
 
 **模型**：`name` 展示名 · `id` 可省略（由 name 生成 slug）· `color` 占位缩略图色系（hex，
 选和厂商品牌接近的颜色）· `is_mono` 单色图标为 true（CSS mask 渲染跟随文字色）·
-`icon_url` 按**厂商**命名共用：`/model-icons/{vendor}.svg`（现有 claude / gemini / glm / gpt，
-如 Fable-5 Max 与 Opus-4.8 Max 共用 claude.svg）。新厂商需把 svg 放进
+`icon_url` 按**厂商**命名共用：`/model-icons/{vendor}.svg`（同厂商的多个模型版本
+共用一个图标）。新厂商需把 svg 放进
 `client/public/model-icons/<vendor>.svg`（用户没给图标文件就先建模型、提醒补图标）。
 
 **任务**：`summary` 单行摘要 · `prompt` 完整提示词 · `index` 排序（0 起，可省略追加末尾）。
@@ -112,6 +112,5 @@ sips -z 400 640 shot.png       # 1280×800 缩到 640×400（sips -z 高 宽）
 - 删除是级联的（删模型/任务会连带删其体验卡和上传文件）——**执行任何删除前必须向用户复述影响并确认**。
 - 写操作若返回 401/400，检查 key 与 body 格式；404 先核对 id 是否解析正确。
 - 完成后用 GET 复查结果，向用户简要汇报（做了什么、新 id 是什么），提醒刷新浏览器即可看到。
-- `db.json` 是运行时数据；若用户要求改动"长期/默认生效"（换机器或重置后仍在），
-  需同步修改种子 `client/src/lib/mockData.ts`，并注意占位页 `client/public/sites/{NN}/{model_id}.html`
-  的文件名要跟着模型 id 走。
+- 模型、任务、prompt 和生成结果只存在运行时 `server/data/`，不写入 Git；需要迁移或长期保留时，
+  备份并恢复整个数据目录，禁止创建源码种子或把生成结果放进 `client/public/sites/`。

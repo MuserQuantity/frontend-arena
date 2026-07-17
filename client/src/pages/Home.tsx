@@ -40,7 +40,7 @@ export default function Home() {
             async task =>
               [
                 task.index,
-                await api.getGenerations(task.id, task.index),
+                await api.getGenerations(task.id),
               ] as const
           )
         );

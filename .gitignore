@@ -112,5 +112,7 @@ temp/
 client/public/__manus__/version.json
 .project-config.json
 
-# Local API data (db.json + uploads)
+# Runtime arena data and generated previews
 server/data/
+client/public/sites/
+task_prompts_*.md

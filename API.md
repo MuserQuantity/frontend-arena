@@ -1,9 +1,9 @@
 # Frontend Arena 后端接口（已实现）
 
-本文件是后端 REST 契约，**已由 `server/` 完整实现**（Express + JSON 文件存储，
-首次启动自动用内置 mock 数据做种子）。前端通过 `client/src/lib/api.ts` 中的服务层调用：
-`VITE_API_BASE_URL` 为空时用内置 mock；设为 API 地址（开发 `http://localhost:3001`、
-生产同源 `/`）即切换到真实接口，业务代码无需改动。
+本文件是后端 REST 契约，**已由 `server/` 完整实现**（Express + JSON 文件存储）。
+模型、任务、prompt 和生成结果全部通过运行时 API 管理；新数据目录从空数据库开始。
+前端通过 `client/src/lib/api.ts` 调用 API，开发地址通常为 `http://localhost:3001`，
+生产环境使用同源 `/`。
 
 ## 本地运行
 
@@ -21,7 +21,7 @@ VITE_API_BASE_URL=/ pnpm build && pnpm start   # http://localhost:3000
 
 - 数据落在 `server/data/`（`db.json` + 上传的 `sites|thumbs|thumbs-mobile`，已 gitignore），可用 `DATA_DIR` 重定向。
 - `PUBLIC_BASE_URL`：API 返回的资源 url 前缀。开发跨端口时设为 `http://localhost:3001`；生产同源留空（返回相对路径）。
-- 删除 `server/data/db.json` 可重置回种子数据。
+- 删除 `server/data/db.json` 并重启会创建空数据库；操作前应备份整个 `server/data/`。
 
 ## 鉴权约定
 
@@ -51,12 +51,11 @@ VITE_API_BASE_URL=/ pnpm build && pnpm start   # http://localhost:3000
 ### Model
 ```jsonc
 {
-  "id": "fable-5-max",            // 稳定 id，同时用于解析资源路径
-  "name": "Fable-5 Max",          // 展示名
-  "is_mono": false,               // true=单色图标(用 CSS mask 渲染, 跟随文字色); false=彩色 <img>
-  "icon_url": "/model-icons/claude.svg",  // 图标按厂商命名，同厂商多版本共用一个图标
-                                  // （如 Fable-5 Max 与 Opus-4.8 Max 共用 claude.svg）
-  "color": "#d97706"              // 可选。创建模型时选择的品牌色系；缩略图缺失/加载中时
+  "id": "example-model",          // 稳定 id，同时用于解析资源路径
+  "name": "Example Model",        // 展示名
+  "is_mono": true,                 // true=单色图标(用 CSS mask 渲染, 跟随文字色); false=彩色 <img>
+  "icon_url": "/model-icons/example.svg", // 图标按厂商命名，同厂商多版本可共用
+  "color": "#4f46e5"              // 可选。创建模型时选择的品牌色系；缩略图缺失/加载中时
                                   // 前端用它自动渲染线框占位图，未设置则回退为中性灰
 }
 ```
@@ -64,22 +63,22 @@ VITE_API_BASE_URL=/ pnpm build && pnpm start   # http://localhost:3000
 ### Task
 ```jsonc
 {
-  "id": "task_00",
+  "id": "task_xxxxxxxx",
   "index": 0,                     // 从 0 起的排序索引，用于编号与资源目录名(00,01,...)
-  "summary": "Steampunk control panel ...",  // 单行摘要
-  "prompt": "A complicated, complex ...",    // 完整原始 prompt（展开显示）
-  "available_models": ["fable-5-max", "opus-4_8-max", "gpt-5_5-xhigh", "glm-5_2-max", "gemini-3_5-flash-high"]
+  "summary": "Interactive product demo", // 单行摘要
+  "prompt": "Build an interactive product demo ...", // 完整原始 prompt（展开显示）
+  "available_models": ["example-model"]
 }
 ```
 
 ### Generation（某个 task × model 的生成结果）
 ```jsonc
 {
-  "task_id": "task_00",
-  "model_id": "fable-5-max",
-  "preview_url": "/sites/00/fable-5-max.html",  // 可交互的独立 HTML，前端用 iframe 加载
-  "thumb_url": "/thumbs/00/fable-5-max.webp",   // 桌面缩略图
-  "thumb_mobile_url": "/thumbs-mobile/00/fable-5-max.webp", // 移动缩略图(可选)
+  "task_id": "task_xxxxxxxx",
+  "model_id": "example-model",
+  "preview_url": "/sites/00/example-model.html", // 可交互的独立 HTML，前端用 iframe 加载
+  "thumb_url": "/thumbs/00/example-model.webp",  // 桌面缩略图
+  "thumb_mobile_url": "/thumbs-mobile/00/example-model.webp", // 移动缩略图(可选)
   "status": "ready"               // ready | pending | failed
 }
 ```
@@ -91,7 +90,7 @@ VITE_API_BASE_URL=/ pnpm build && pnpm start   # http://localhost:3000
 ### `GET /api/v1/models`
 返回全部模型列表。
 ```jsonc
-{ "data": [ { "id": "fable-5-max", "name": "Fable-5 Max", "is_mono": false, "icon_url": "..." }, ... ] }
+{ "data": [ { "id": "example-model", "name": "Example Model", "is_mono": true, "icon_url": "..." }, ... ] }
 ```
 
 ### `GET /api/v1/tasks`
@@ -237,16 +236,16 @@ curl -X DELETE $B/tasks/task_xxxxxxxx/generations/deepseek-v4 \
 ### 5. 重置与备份
 
 ```bash
-rm server/data/db.json      # 重启 dev:server 后自动重新播种（15 任务 × 5 模型）
 cp -R server/data ~/backup/ # 全量备份：db.json + 上传的 sites/thumbs 文件
+rm server/data/db.json      # 重启 dev:server 后创建空数据库
 ```
 
 ---
 
-## 前端切换真实接口的方法
+## 前端 API 配置
 
 1. 构建/运行时设置 `VITE_API_BASE_URL`：开发 `http://localhost:3001`；生产同源填 `/`；也可指向远端 `https://api.example.com`。
-2. 前端 `api.ts` 检测到该变量非空即自动走真实分支（GET 读接口）；为空回落内置 mock。
+2. 未设置或留空时使用同源 API；前端不包含模型、任务、prompt 或生成结果的 mock 数据。
 3. 缩略图与预览路径由后端返回的 `thumb_url` / `preview_url` 决定，可用相对路径或 CDN 绝对 URL（相对路径会被 `PUBLIC_BASE_URL` 前缀）。
 
 ## 存储结构（server/data/db.json）
@@ -263,11 +262,9 @@ generations   (task_id, model_id, preview_url, thumb_url, thumb_mobile_url, stat
 
 ## 备注：占位缩略图（自动渲染）
 
-- 前端当前内置 5 个模型、15 个任务的 mock 数据（`client/src/lib/mockData.ts`）。
-- 缩略图**不再使用静态占位文件**：当 `thumb_url` 为空、加载中或加载失败时，
+- 缩略图不使用静态占位文件：当 `thumb_url` 为空、加载中或加载失败时，
   前端用模型的 `color` 色系自动渲染线框风格占位图
   （`client/src/components/PlaceholderThumb.tsx`），亮/暗主题自适应。
   真实缩略图就绪后由后端返回 `thumb_url`（建议 `.webp`），前端在其加载完成后淡入覆盖。
-- `client/public/sites` 下为**占位**预览页（说明性内容），后端就绪后请以真实生成结果替换。
-- 模型图标（`client/public/model-icons/*.svg`）按厂商命名（claude/gemini/glm/gpt），
-  同厂商多版本共用（如 Fable-5 Max 与 Opus-4.8 Max 共用 `claude.svg`）；新增厂商时放入同目录即可。
+- 模型图标（`client/public/model-icons/*.svg`）按厂商命名，同厂商多版本可以共用；
+  新增厂商时将对应图标放入该目录。
