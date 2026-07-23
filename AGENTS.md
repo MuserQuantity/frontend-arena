@@ -113,3 +113,26 @@ def upload_to_env(base_url: str, api_key: str, index: int, html_path: str, thumb
         response = requests.post(url, headers=headers, files=files)
     return response.status_code in (200, 201)
 ```
+
+## Cursor Cloud specific instructions
+
+Single product (React 19 + Vite frontend + Express API, pnpm, Node 22). No external
+database — runtime data is JSON-file storage under `server/data/` (auto-created empty
+on first run). The update script already runs `pnpm install`.
+
+Dev services (run each in its own tmux session; start `dev:server` before `dev`):
+- `pnpm dev:server` — API + static assets on `http://localhost:3001` (`PORT=3001`, tsx watch)
+- `pnpm dev` — Vite frontend on `http://localhost:3000` (reads runtime data from the API)
+
+The frontend requires the API to be running; a fresh DB is empty, so the homepage shows
+no cards until you seed models/tasks/generations via the API (see `API.md`).
+
+- Type check / lint gate: `pnpm check` (tsc). `pnpm format` runs Prettier with `--write`
+  (many files have pre-existing style warnings, so `prettier --check` is noisy — not a gate).
+- No automated test suite exists (vitest is a dependency but there are no test files and no
+  `test` script).
+- `.env` is gitignored and optional: without it the server prints a NEW temporary `API_KEY`
+  each run (reads are public; only writes need the key). For a stable write key, copy
+  `.env.example` to `.env` and set `API_KEY` (e.g. `openssl rand -hex 32`).
+- Do not run the local `pnpm dev:server` and the Docker container at the same time — they
+  share `./server/data` and will double-write.
