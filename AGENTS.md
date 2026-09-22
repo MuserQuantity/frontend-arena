@@ -36,6 +36,25 @@ Models, tasks, prompts, uploaded HTML, and thumbnails are runtime data under `se
 They must not be added to Git or mirrored into source-code seeds / `client/public/sites/`.
 Back up and restore the complete data directory when moving environments.
 
+## Deleting Models on Prod — What the API Does NOT Remove
+
+`DELETE /models/{id}` removes the model, its DB generation rows and the files those rows reference.
+Two kinds of residue stay reachable by direct URL on prod (nothing links to them; harmless but
+confusing when verifying with `curl`):
+- The prod image (built 2026-07-09, before `client/public/sites` was added to `.dockerignore` on
+  07-17) has ~3 KB **placeholder pages** baked in at `client/public/sites/NN/{model}.html`. After the
+  data-dir copy is deleted, `express.static` falls through to them, so `/sites/NN/{model}.html`
+  still answers 200. A rebuild/redeploy with current source drops them.
+- **Orphan files** not referenced by any DB row (leftovers of the 07-06 resequencing incident)
+  are never touched by the API. Known on prod: `sites/05..08/{gpt-5_5-xhigh,opus-4_8-max}.html`
+  (real card HTML, Jul 3–6 mtimes). Need a shell on the prod host to remove.
+- `/thumbs/...` for deleted cards returns 200 too — that is just the SPA fallback (`index.html`,
+  1415 B, `text/html`), not a surviving file. Check `content-type`/`content-length`, not status.
+
+2026-09-02: deleted `gpt-5_5-xhigh`, `glm-5_2-max`, `opus-4_8-max` (20 cards) from prod.
+Full backup (html + thumbs + `meta.json` with model/generation rows) in
+`tmp/prod-backup-2026-09-02/`; restore = `POST /models` from `meta.json`, then `/upload` each file.
+
 ## Task Deletion Script
 
 `scripts/delete-tasks.sh` deletes tasks (cascades to experience cards; remaining
