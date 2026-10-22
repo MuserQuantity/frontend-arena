@@ -94,7 +94,12 @@ Full backup (html + thumbs + `meta.json` with model/generation rows) in
 
 Host `muser@81.68.207.71`, repo `/home/muser/projects/frontend-arena` (Docker Compose behind
 Traefik; its `docker-compose.yml` has local Traefik edits that must stay uncommitted there).
-Back up `server/data/db.json` first, then `git pull --ff-only && docker compose up -d --build`.
+Back up `server/data/db.json` first, then:
+```bash
+git pull --ff-only
+docker compose build --build-arg NPM_REGISTRY=https://registry.npmmirror.com  # npmjs times out there
+docker compose up -d
+```
 
 ## Task Deletion Script
 

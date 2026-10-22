@@ -4,7 +4,13 @@
 # Run:    docker run -d -p 3000:3000 -e API_KEY=xxx -v ./server/data:/app/server/data frontend-arena
 
 FROM node:22-alpine AS base
-ENV COREPACK_ENABLE_DOWNLOAD_PROMPT=0
+# npm registry for corepack (pnpm itself) + pnpm installs; integrity is still
+# checked against the lockfile and the packageManager sha512. Hosts that can't
+# reach npmjs reliably: --build-arg NPM_REGISTRY=https://registry.npmmirror.com
+ARG NPM_REGISTRY=https://registry.npmjs.org
+ENV COREPACK_ENABLE_DOWNLOAD_PROMPT=0 \
+    COREPACK_NPM_REGISTRY=$NPM_REGISTRY \
+    npm_config_registry=$NPM_REGISTRY
 RUN corepack enable
 WORKDIR /app
 
