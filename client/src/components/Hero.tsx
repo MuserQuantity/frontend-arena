@@ -64,7 +64,7 @@ export function Hero({ models, taskCount, previewCount }: Props) {
   );
 }
 
-function Stat({ label, value }: { label: string; value: string }) {
+export function Stat({ label, value }: { label: string; value: string }) {
   return (
     <div className="flex flex-col gap-1">
       <span className="tnum font-mono text-[19px] font-medium leading-none text-text">

@@ -19,6 +19,18 @@ export interface Model {
    * thumbnail is loading / missing. Falls back to a neutral grey when unset.
    */
   color?: string;
+  /** official release (GA) date, "YYYY-MM-DD"; empty/unset when unknown */
+  release_date?: string;
+  /** ISO timestamp when the model joined the arena */
+  created_at?: string;
+}
+
+/** A deleted model kept in the Models directory (info only, generations removed). */
+export interface ArchivedModel extends Model {
+  deleted_at: string;
+  /** ready generations / total tasks at deletion time */
+  ready_count: number;
+  task_count: number;
 }
 
 export interface Task {

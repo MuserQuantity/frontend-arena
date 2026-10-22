@@ -1,11 +1,10 @@
 /**
- * Technical Ledger — home page.
- * Data-driven: loads models + tasks (public GET), lazily loads generations per
- * task, and orchestrates the fullscreen preview modal.
+ * Technical Ledger — home page (OVERVIEW).
+ * Data-driven: loads models + tasks + generations (public GET, shared cache)
+ * and orchestrates the fullscreen preview modal.
  */
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { api } from "@/lib/api";
-import type { Generation, Model, Task } from "@/lib/types";
+import { useArenaData } from "@/hooks/useArenaData";
 import { Header } from "@/components/Header";
 import { Hero } from "@/components/Hero";
 import { Footer } from "@/components/Footer";
@@ -16,57 +15,13 @@ import { PreviewModal, type PreviewTarget } from "@/components/PreviewModal";
 import { RingSpinner } from "@/components/RingSpinner";
 
 export default function Home() {
-  const [models, setModels] = useState<Model[]>([]);
-  const [tasks, setTasks] = useState<Task[]>([]);
-  const [genByTask, setGenByTask] = useState<Map<number, Generation[]>>(
-    new Map()
-  );
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const { models, tasks, genByTask, generationsByTask, loading, error } =
+    useArenaData();
   const [target, setTarget] = useState<PreviewTarget | null>(null);
 
-  // initial load: models + tasks
   useEffect(() => {
-    let cancelled = false;
-    (async () => {
-      try {
-        const [m, t] = await Promise.all([api.getModels(), api.getTasks()]);
-        if (cancelled) return;
-        setModels(m);
-        setTasks(t);
-        // fetch generations for all tasks (public GET)
-        const entries = await Promise.all(
-          t.map(
-            async task =>
-              [
-                task.index,
-                await api.getGenerations(task.id),
-              ] as const
-          )
-        );
-        if (cancelled) return;
-        setGenByTask(new Map(entries));
-      } catch (e) {
-        if (!cancelled) setError(e instanceof Error ? e.message : "加载失败");
-      } finally {
-        if (!cancelled) setLoading(false);
-      }
-    })();
-    return () => {
-      cancelled = true;
-    };
+    document.title = "Frontend Arena — 大模型前端实力对比";
   }, []);
-
-  // generations indexed for the modal: taskIndex → (modelId → Generation)
-  const generationsByTask = useMemo(() => {
-    const outer = new Map<number, Map<string, Generation>>();
-    genByTask.forEach((list, idx) => {
-      const inner = new Map<string, Generation>();
-      for (const g of list) inner.set(g.model_id, g);
-      outer.set(idx, inner);
-    });
-    return outer;
-  }, [genByTask]);
 
   // hero 预览计数：只统计真实 ready 的体验卡，排除待生成/失败
   const previewCount = useMemo(() => {

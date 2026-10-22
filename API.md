@@ -55,10 +55,25 @@ VITE_API_BASE_URL=/ pnpm build && pnpm start   # http://localhost:3000
   "name": "Example Model",        // 展示名
   "is_mono": true,                 // true=单色图标(用 CSS mask 渲染, 跟随文字色); false=彩色 <img>
   "icon_url": "/model-icons/example.svg", // 图标按厂商命名，同厂商多版本可共用
-  "color": "#4f46e5"              // 可选。创建模型时选择的品牌色系；缩略图缺失/加载中时
+  "color": "#4f46e5",             // 可选。创建模型时选择的品牌色系；缩略图缺失/加载中时
                                   // 前端用它自动渲染线框占位图，未设置则回退为中性灰
+  "release_date": "2026-09-22",   // 可选。官方发布（GA）日期 YYYY-MM-DD，MODELS 页按它倒序；
+                                  // 缺失时回退为 created_at 的日期；PATCH 传 "" 清空
+  "created_at": "2026-10-08T11:28:36.279Z" // 加入评测的时间（服务端生成）
 }
 ```
+
+### ArchivedModel（已删除、保留在 MODELS 目录中的模型）
+```jsonc
+{
+  "...": "Model 的全部字段",
+  "deleted_at": "2026-10-22T08:00:00.000Z",
+  "ready_count": 5,               // 删除时已就绪的生成结果数
+  "task_count": 5                 // 删除时的任务总数
+}
+```
+`DELETE /models/:id` 会自动把模型存入归档（生成结果与文件照常删除，只留信息）；
+用同一 id 重新 `POST /models` 时归档条目自动移除。
 
 ### Task
 ```jsonc
@@ -92,6 +107,9 @@ VITE_API_BASE_URL=/ pnpm build && pnpm start   # http://localhost:3000
 ```jsonc
 { "data": [ { "id": "example-model", "name": "Example Model", "is_mono": true, "icon_url": "..." }, ... ] }
 ```
+
+### `GET /api/v1/models/archived`
+返回已删除但保留在 MODELS 目录中的模型（ArchivedModel 列表，仅信息，无生成结果）。
 
 ### `GET /api/v1/tasks`
 返回全部任务，含每个任务的可用模型清单（`available_models`）。
@@ -128,8 +146,9 @@ GET /model-icons/{vendor}.svg            # 模型图标（按厂商命名：clau
 | 方法 | 路径 | 说明 |
 | --- | --- | --- |
 | POST | `/api/v1/models` | 新增模型（`name`,`is_mono`,`icon_url`,`color` 色系可选；`id` 可省略由后端生成） |
-| PATCH | `/api/v1/models/:id` | 更新模型字段 |
-| DELETE | `/api/v1/models/:id` | 删除模型 |
+| PATCH | `/api/v1/models/:id` | 局部更新模型字段（未传的字段保持不变），含 `release_date` |
+| DELETE | `/api/v1/models/:id` | 删除模型（信息自动归档到 MODELS 目录） |
+| DELETE | `/api/v1/models/archived/:id` | 从 MODELS 目录彻底移除某个归档模型 |
 
 ### 任务管理
 | 方法 | 路径 | 说明 |
@@ -184,8 +203,14 @@ curl -X POST $B/models -H "Authorization: Bearer $API_KEY" \
 curl -X PATCH $B/models/deepseek-v4 -H "Authorization: Bearer $API_KEY" \
   -H "Content-Type: application/json" -d '{"color":"#0891b2"}'
 
-# 删：连带删除该模型全部生成结果与上传文件
+# 官方发布日期（MODELS 页按它倒序）
+curl -X PATCH $B/models/deepseek-v4 -H "Authorization: Bearer $API_KEY" \
+  -H "Content-Type: application/json" -d '{"release_date":"2026-09-22"}'
+
+# 删：连带删除该模型全部生成结果与上传文件；模型信息归档，仍显示在 MODELS 页
 curl -X DELETE $B/models/deepseek-v4 -H "Authorization: Bearer $API_KEY"
+# 连 MODELS 页也不保留时，再删归档
+curl -X DELETE $B/models/archived/deepseek-v4 -H "Authorization: Bearer $API_KEY"
 ```
 
 模型图标：把 svg 放进 `client/public/model-icons/`，**按厂商命名**（如 `deepseek.svg`），
@@ -252,7 +277,8 @@ rm server/data/db.json      # 重启 dev:server 后创建空数据库
 
 ```
 tasks         (id, index, summary, prompt, created_at)
-models        (id, name, is_mono, icon_url, color, created_at)
+models        (id, name, is_mono, icon_url, color, release_date, created_at)
+archived_models (models 的全部字段 + deleted_at, ready_count, task_count)
 generations   (task_id, model_id, preview_url, thumb_url, thumb_mobile_url, status, updated_at)
               键：(task_id, model_id)
 ```

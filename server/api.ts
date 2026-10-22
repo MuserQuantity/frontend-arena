@@ -34,20 +34,27 @@ const fail = (res: Response, status: number, code: string, message: string) =>
 
 const statusEnum = z.enum(["ready", "pending", "failed"]);
 
+const modelFields = {
+  name: z.string().min(1).max(80),
+  is_mono: z.boolean(),
+  icon_url: z.string().max(500),
+  color: z.string().regex(/^#[0-9a-fA-F]{3,8}$/),
+  /** official release date YYYY-MM-DD; "" clears it */
+  release_date: z.string().regex(/^(\d{4}-\d{2}-\d{2})?$/),
+};
 const modelCreateSchema = z.object({
+  ...modelFields,
   id: z
     .string()
     .regex(/^[a-z0-9][a-z0-9_-]*$/)
     .optional(),
-  name: z.string().min(1).max(80),
-  is_mono: z.boolean().optional().default(false),
-  icon_url: z.string().max(500).optional().default(""),
-  color: z
-    .string()
-    .regex(/^#[0-9a-fA-F]{3,8}$/)
-    .optional(),
+  is_mono: modelFields.is_mono.optional().default(false),
+  icon_url: modelFields.icon_url.optional().default(""),
+  color: modelFields.color.optional(),
+  release_date: modelFields.release_date.optional(),
 });
-const modelPatchSchema = modelCreateSchema.omit({ id: true }).partial();
+// no defaults here: a partial update must not reset omitted fields
+const modelPatchSchema = z.object(modelFields).partial();
 
 const taskCreateSchema = z.object({
   summary: z.string().min(1).max(300),
@@ -154,6 +161,18 @@ export function createApiRouter({
 
   router.get("/models", (_req, res) => ok(res, db.models));
 
+  // deleted models kept for the Models directory (info only, no generations)
+  router.get("/models/archived", (_req, res) => ok(res, db.archived_models));
+
+  router.delete("/models/archived/:id", (req, res) => {
+    const idx = db.archived_models.findIndex(m => m.id === req.params.id);
+    if (idx === -1)
+      return fail(res, 404, "NOT_FOUND", "archived model not found");
+    const [removed] = db.archived_models.splice(idx, 1);
+    store.save();
+    ok(res, removed);
+  });
+
   router.post("/models", (req, res) => {
     const parsed = modelCreateSchema.safeParse(req.body);
     if (!parsed.success)
@@ -167,6 +186,8 @@ export function createApiRouter({
     }
     const model = { id, ...rest, created_at: new Date().toISOString() };
     db.models.push(model);
+    // a re-added model is live again, drop its archived copy
+    db.archived_models = db.archived_models.filter(m => m.id !== id);
     store.save();
     ok(res, model, 201);
   });
@@ -185,11 +206,17 @@ export function createApiRouter({
   router.delete("/models/:id", (req, res) => {
     const idx = db.models.findIndex(m => m.id === req.params.id);
     if (idx === -1) return fail(res, 404, "NOT_FOUND", "model not found");
-    for (const g of db.generations.filter(g => g.model_id === req.params.id)) {
-      removeGenerationAssets(g);
-    }
+    const gens = db.generations.filter(g => g.model_id === req.params.id);
+    for (const g of gens) removeGenerationAssets(g);
     db.generations = db.generations.filter(g => g.model_id !== req.params.id);
     const [removed] = db.models.splice(idx, 1);
+    db.archived_models = db.archived_models.filter(m => m.id !== removed.id);
+    db.archived_models.push({
+      ...removed,
+      deleted_at: new Date().toISOString(),
+      ready_count: gens.filter(g => g.status === "ready").length,
+      task_count: db.tasks.length,
+    });
     store.save();
     ok(res, removed);
   });

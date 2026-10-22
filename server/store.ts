@@ -12,7 +12,17 @@ export interface ModelRow {
   is_mono: boolean;
   icon_url: string;
   color?: string;
+  /** official release (GA) date, YYYY-MM-DD */
+  release_date?: string;
   created_at: string;
+}
+
+/** A deleted model kept for the Models directory (its generations are gone). */
+export interface ArchivedModelRow extends ModelRow {
+  deleted_at: string;
+  /** ready generations / total tasks at deletion time */
+  ready_count: number;
+  task_count: number;
 }
 
 export interface TaskRow {
@@ -39,10 +49,11 @@ export interface DB {
   models: ModelRow[];
   tasks: TaskRow[];
   generations: GenerationRow[];
+  archived_models: ArchivedModelRow[];
 }
 
 function seed(): DB {
-  return { models: [], tasks: [], generations: [] };
+  return { models: [], tasks: [], generations: [], archived_models: [] };
 }
 
 export class Store {
@@ -53,6 +64,7 @@ export class Store {
     this.file = path.join(dataDir, "db.json");
     if (fs.existsSync(this.file)) {
       this.db = JSON.parse(fs.readFileSync(this.file, "utf-8")) as DB;
+      this.db.archived_models ??= [];
     } else {
       this.db = seed();
       this.save();

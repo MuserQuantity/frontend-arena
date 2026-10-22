@@ -77,6 +77,13 @@
   --modalbar-h: 56px;
 }
 
+/* mobile header adds a 40px nav row (+1px divider) */
+@media (max-width: 639px) {
+  :root {
+    --topbar-h: 93px;
+  }
+}
+
 .dark {
   color-scheme: dark;
   --bg: #050507;

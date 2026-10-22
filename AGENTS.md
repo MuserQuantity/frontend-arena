@@ -16,9 +16,26 @@ Rules before ANY `/upload`:
 2. Migration = re-upload each generation's current files via the API (download from `preview_url`,
    POST to the same task) **in ascending target-index order**; the server re-homes files to the
    current index dir and updates URLs.
-3. As of 2026-07-17 both local and prod are fully aligned (dir == index for all 10 tasks).
+3. As of 2026-09-24 both local and prod are fully aligned (dir == index for all 5 tasks).
    Keep it that way: avoid deleting tasks; if a deletion is necessary, re-run the alignment
    check afterwards before any new upload.
+
+2026-09-24: deleted old #02/06/08/09/10 (Room generator, Hokusai wave, Cappadocia balloons,
+Forbidden City snow, Harbin ice city) on local (8 cards) and prod (29 cards). Then re-homed the 4
+shifted tasks by re-uploading their files (local 26 files, prod 61 files, one file per request
+because the largest prod card is ~1.1 MB total) and hash-checked every file against the backup.
+Remaining tasks: 01 lava lamp · 02 Win98 Paint · 03 MacBook Air · 04 döner kebab · 05 Van Gogh.
+- Backups taken before the deletion cover all 10 tasks (prompts, generation rows with sha256,
+  html/thumbs): `tmp/{local,prod}-backup-2026-09-24/`. Tool:
+  `python3 tmp/arena_prune_tasks.py <backup|delete|migrate|verify|orphans> <local|prod>`. The
+  delete list is hardcoded. `migrate` works for any deletion but assumes indexes only move down
+  (ascending order). If a target file is still referenced it aborts instead of overwriting it.
+- To restore a task, append it (`POST /tasks` with summary/prompt from `meta.json` and no
+  `index`, so no other task shifts), then `/upload` its files.
+- Old copies were left at the previous paths. Nothing references them, and future uploads may
+  overwrite them without harm: local `sites|thumbs/04/{glm-5_2-max,gpt-5_5-xhigh,opus-4_8-max}`
+  and `sites|thumbs/06/fable-5-max`; prod `sites|thumbs/06/*` (7 models),
+  `thumbs-mobile/02/gpt-5_6-sol-max.png` and `thumbs-mobile/06/gpt-6-astra-max.png`.
 
 ## Deployment Environments & API Configuration
 
@@ -55,11 +72,37 @@ confusing when verifying with `curl`):
 Full backup (html + thumbs + `meta.json` with model/generation rows) in
 `tmp/prod-backup-2026-09-02/`; restore = `POST /models` from `meta.json`, then `/upload` each file.
 
+2026-10-22: deleted `grok-4_5-high` (5 cards, tasks 00–04) from prod. No backup, at the user's request.
+
+## MODELS Page: Release Dates & Archived Models
+
+- Header nav: `OVERVIEW` (`/`, `pages/Home.tsx`) and `MODELS` (`/models`, `pages/Models.tsx`).
+  Both share `hooks/useArenaData.ts` (module-level cache, no refetch when switching pages).
+- `/models` is sorted by `release_date` desc (official GA date, `YYYY-MM-DD`), falling back to
+  the `created_at` date. Set it with `PATCH /models/{id} {"release_date":"..."}` when adding a model.
+- `DELETE /models/{id}` now archives the model info into `db.archived_models` (`GET /models/archived`),
+  so it stays on `/models` as an "已下线" card. Use `DELETE /models/archived/{id}` to drop it from the
+  page too. Models deleted before 2026-10-22 were not back-filled, at the user's request.
+- Fixed 2026-10-22: `PATCH /models/{id}` used to reset omitted `icon_url`/`is_mono` to their
+  defaults (zod `.default()` survived `.partial()`). Never PATCH a server running code older than
+  this fix with a partial body.
+- Release dates set on prod 2026-10-22 (GA dates from vendor docs): fable-5 06-09, gpt-5.6-sol
+  07-09, kimi-k3 07-17, opus-5 07-24, fable-5.1 09-01, gpt-6-astra 09-04 (limited preview 09-03),
+  grok-4.7 09-21, opus-5.5 09-22, gemini-4-argon 10-13 (trusted-tester preview 09-30).
+
+## Deploying to Prod
+
+Host `muser@81.68.207.71`, repo `/home/muser/projects/frontend-arena` (Docker Compose behind
+Traefik; its `docker-compose.yml` has local Traefik edits that must stay uncommitted there).
+Back up `server/data/db.json` first, then `git pull --ff-only && docker compose up -d --build`.
+
 ## Task Deletion Script
 
 `scripts/delete-tasks.sh` deletes tasks (cascades to experience cards; remaining
 tasks are auto-resequenced by the server). Keys are read from `.env`
 (`API_KEY` for local, `PROD_API_KEY` for prod). Interactive confirmation required.
+It does **not** realign files. After running it, do the migration from the Upload Collision
+Gotcha section before any upload.
 
 ```bash
 scripts/delete-tasks.sh local task_02 task_04   # local Docker (localhost:3000)

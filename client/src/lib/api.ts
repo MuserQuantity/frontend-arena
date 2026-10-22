@@ -2,7 +2,7 @@
  * API service layer for runtime-managed models, tasks, prompts, and generations.
  * Read endpoints are public; mutations require a server-side API key.
  */
-import type { Generation, Model, Task } from "./types";
+import type { ArchivedModel, Generation, Model, Task } from "./types";
 
 const RAW_BASE = (
   (import.meta.env.VITE_API_BASE_URL as string | undefined) ?? "/"
@@ -22,6 +22,11 @@ export const api = {
   /** GET /api/v1/models — public */
   async getModels(): Promise<Model[]> {
     return getJSON<Model[]>("/api/v1/models");
+  },
+
+  /** GET /api/v1/models/archived — public. Deleted models kept for the directory. */
+  async getArchivedModels(): Promise<ArchivedModel[]> {
+    return getJSON<ArchivedModel[]>("/api/v1/models/archived");
   },
 
   /** GET /api/v1/tasks — public. Includes each task's available model manifest. */
